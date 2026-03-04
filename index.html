@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anlan.的小站 - 下拉动效</title>
+    <title>Anlan.的小站 - 下拉动效+档案袋</title>
     <style>
         /* 全局样式重置 */
         * {
@@ -227,66 +227,226 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* ========== 仅手机端生效的适配样式 ========== */
+        /* ========== 档案袋整体放大一倍 ========== */
+        .file-wrapper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 80;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            width: 100%;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+        .file-wrapper.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .slide-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 560px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        .slide-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-bag {
+            flex: 0 0 400px;
+            height: 440px;
+            position: relative;
+            border-radius: 12px;
+            opacity: 0;
+            cursor: pointer;
+            box-sizing: border-box;
+            padding: 16px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            transform: scale(0.7);
+        }
+        .file-bag.active {
+            opacity: 1;
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        .file-bag.prev-1,
+        .file-bag.next-1 {
+            opacity: 0.4;
+            transform: scale(0.85);
+            z-index: 8;
+        }
+        .file-bag.prev-2,
+        .file-bag.next-2 {
+            opacity: 0.2;
+            transform: scale(0.75);
+            z-index: 6;
+        }
+
+        .bag-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .bag-shell {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #d9c3a1;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            z-index: 2;
+        }
+        .file-bag.active .bag-shell {
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
+        .bag-seal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: #c7b08c;
+            border-bottom: 2px solid #b49b76;
+            border-radius: 12px 12px 0 0;
+            z-index: 3;
+            transition: 
+                transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s,
+                opacity 0.4s ease 0.5s;
+            transform-origin: top center;
+        }
+        .file-bag.active .bag-seal {
+            transform: rotateX(180deg) translateY(-80px) scale(0.95);
+            opacity: 0;
+        }
+
+        .pull-file {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: calc(100% - 60px);
+            height: 360px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+            z-index: 4;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.3) 0.8s;
+            text-align: center;
+            padding: 50px 20px;
+            font-size: 24px;
+            color: #333;
+            box-sizing: border-box;
+        }
+        .file-bag.active .pull-file {
+            opacity: 1;
+            top: 40%;
+            left: 48%;
+            transform: translate(-50%, -50%) scale(1.05) rotate(2deg);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        }
+
+        .bag-img {
+            position: absolute;
+            top: 30px;
+            left: 16px;
+            width: calc(100% - 32px);
+            height: calc(100% - 110px);
+            object-fit: cover;
+            border-radius: 8px;
+            opacity: 0.1;
+            transition: opacity 0.6s ease 1s;
+            z-index: 0;
+        }
+        .file-bag.active .bag-img { opacity: 0.85; }
+
+        /* 切换按钮也放大 */
+        .slide-btn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #d9c3a1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 36px;
+            cursor: pointer;
+            z-index: 999;
+            color: #886f4b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .slide-btn:hover {
+            background: #f8f5ee;
+            color: #665238;
+            transform: translateY(-50%) scale(1.05);
+        }
+        .slide-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        .prev-btn { left: 30px; }
+        .next-btn { right: 30px; }
+
+        /* ========== 手机端也放大一倍 ========== */
         @media (max-width: 768px) {
-            /* 手机端核心容器垂直布局 */
             .profile-container {
                 flex-direction: column;
                 gap: 10px;
                 padding: 15px;
             }
-
-            /* 手机端头像缩小 */
             .avatar {
                 width: 120px;
                 height: 120px;
             }
-
             .profile-container.scrolled .avatar {
                 width: 50px;
                 height: 50px;
             }
-
-            /* 手机端文字调整 */
             .intro-text {
                 font-size: 20px;
                 order: 2;
             }
-
             .profile-container.scrolled .intro-text {
                 font-size: 16px;
                 order: 2;
             }
-
-            /* 手机端简介容器垂直布局 */
             .intro-wrapper {
                 flex-direction: column;
                 padding: 80px 15px 200px 15px;
                 gap: 20px;
                 align-items: center;
             }
-
-            /* 手机端简介文字宽度100% */
             .intro-content {
                 width: 100%;
                 min-width: unset;
             }
-
-            /* 手机端轮播容器调整 */
             .image-carousel {
                 width: 100%;
                 min-width: unset;
                 height: 250px;
                 padding: 0 10px;
             }
-
-            /* 手机端轮播图片 */
             .carousel-img {
                 width: 100%;
                 height: 90%;
             }
-
-            /* 手机端回到顶部按钮缩小 */
             .back-to-top {
                 width: 40px;
                 height: 40px;
@@ -294,6 +454,47 @@
                 font-size: 18px;
                 bottom: 15px;
                 left: 15px;
+            }
+
+            /* 手机端放大版档案袋 */
+            .file-wrapper {
+                padding: 0 20px;
+            }
+            .slide-container { 
+                max-width: 100%;
+                height: 440px;
+            }
+            .file-bag { 
+                flex: 0 0 320px; 
+                height: 360px;
+                padding: 12px;
+            }
+            .bag-seal {
+                height: 64px;
+            }
+            .pull-file {
+                width: calc(100% - 48px);
+                height: 280px;
+                font-size: 20px;
+                padding: 40px 16px;
+            }
+            .file-bag.active .pull-file {
+                top: 38%;
+                left: 47%;
+                transform: translate(-50%, -50%) scale(1.03) rotate(2deg);
+            }
+            .bag-img {
+                top: 24px;
+                left: 12px;
+                width: calc(100% - 24px);
+                height: calc(100% - 90px);
+            }
+            .slide-btn { 
+                width: 60px; 
+                height: 60px; 
+                font-size: 24px;
+                left: 20px;
+                right: 20px;
             }
         }
     </style>
@@ -320,7 +521,7 @@
             <p style="margin-bottom: 20px;">在这里用来记录我感到新鲜的事物，日常生活，与精彩瞬间</p>
             <p style="margin-bottom: 20px;">就是用来记录问我游戏和生活的</p>
             <p style="margin-bottom: 10px;">pc：这个应该能活久一点吧，对。</p>
-            <p style="font-size: 18px; color: #666; margin-top: 40px;">下拉到900px所有内容将淡出 ↓</p>
+            <p style="font-size: 18px; color: #666; margin-top: 40px;">再次下拉所有内容将淡出 ↓</p>
         </div>
 
         <div class="image-carousel">
@@ -341,6 +542,72 @@
         </div>
     </div>
 
+    <!-- 档案袋组件 -->
+    <div class="file-wrapper" id="fileWrapper">
+        <button class="slide-btn prev-btn">←</button>
+        <button class="slide-btn next-btn">→</button>
+        
+        <div class="slide-container">
+            <div class="slide-track" id="slideTrack">
+                <div class="file-bag">
+                    <div class="bag-inner">
+                        <div class="bag-shell"></div>
+                        <div class="bag-seal"></div>
+                        <div class="pull-file">
+                            <strong>测试1</strong><br><br>
+                           
+                        </div>
+                        <img src="https://picsum.photos/600/400?1" class="bag-img">
+                    </div>
+                </div>
+                <div class="file-bag">
+                    <div class="bag-inner">
+                        <div class="bag-shell"></div>
+                        <div class="bag-seal"></div>
+                        <div class="pull-file">
+                            <strong>测试2</strong><br><br>
+                            
+                        </div>
+                        <img src="https://picsum.photos/600/400?2" class="bag-img">
+                    </div>
+                </div>
+                <div class="file-bag">
+                    <div class="bag-inner">
+                        <div class="bag-shell"></div>
+                        <div class="bag-seal"></div>
+                        <div class="pull-file">
+                            <strong>测试3</strong><br><br>
+                            
+                        </div>
+                        <img src="https://picsum.photos/600/400?3" class="bag-img">
+                    </div>
+                </div>
+                <div class="file-bag">
+                    <div class="bag-inner">
+                        <div class="bag-shell"></div>
+                        <div class="bag-seal"></div>
+                        <div class="pull-file">
+                            <strong>测试4</strong><br><br>
+                            
+                        </div>
+                        <img src="https://picsum.photos/600/400?4" class="bag-img">
+                    </div>
+                </div>
+                <div class="file-bag">
+                    <div class="bag-inner">
+                        <div class="bag-shell"></div>
+                        <div class="bag-seal"></div>
+                        <div class="pull-file">
+                            <strong>测试5</strong><br><br>
+                           
+                        </div>
+                        <img src="https://picsum.photos/600/400?5" class="bag-img">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <a href="#top-anchor" class="back-to-top" id="backToTop">↑</a>
 
     <script>
@@ -349,12 +616,22 @@
         const introWrapper = document.querySelector('.intro-wrapper');
         const backToTop = document.getElementById('backToTop');
         const FIRST_SCROLL = 50;
-        const SECOND_SCROLL = 900;
+        const SECOND_SCROLL = 1200;
         const SCROLL_STEP = 150;
 
+        // 档案袋
+        const fileWrapper = document.getElementById('fileWrapper');
+        const slideTrack = document.getElementById('slideTrack');
+        const fileBags = document.querySelectorAll('.file-bag');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        let currentBagIndex = 2; 
+               const bagWidth = 200;
+
+        // 滚动逻辑：严格 900px 才显示档案袋
         window.addEventListener('scroll', function() {
             const scrollTop = window.scrollY;
-            
+
             if (scrollTop > FIRST_SCROLL) {
                 profileContainer.classList.add('scrolled');
                 pullTip.classList.add('hidden');
@@ -364,20 +641,26 @@
                 introWrapper.classList.remove('content-fade');
                 pullTip.classList.remove('hidden');
                 backToTop.classList.remove('show');
+                fileWrapper.classList.remove('show');
                 return;
             }
 
+            // 重点：只有 >900 才显示档案袋
             if (scrollTop > SECOND_SCROLL) {
                 profileContainer.classList.add('fade-out');
                 introWrapper.classList.add('content-fade');
                 pauseAutoPlay();
+                fileWrapper.classList.add('show');
+                updateSlide();
             } else {
                 profileContainer.classList.remove('fade-out');
                 introWrapper.classList.remove('content-fade');
                 startAutoPlay();
+                fileWrapper.classList.remove('show');
             }
         });
 
+        // 键盘控制
         window.addEventListener('keydown', function(e) {
             if (e.keyCode === 38 || e.keyCode === 104) {
                 window.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
@@ -386,16 +669,25 @@
                 window.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
                 e.preventDefault();
             } else if (e.keyCode === 37 || e.keyCode === 100) {
-                goToSlide(currentIndex - 1);
-                resetAutoPlay();
+                if (fileWrapper.classList.contains('show')) {
+                    slidePrev();
+                } else {
+                    goToSlide(currentIndex - 1);
+                    resetAutoPlay();
+                }
                 e.preventDefault();
             } else if (e.keyCode === 39 || e.keyCode === 102) {
-                goToSlide(currentIndex + 1);
-                resetAutoPlay();
+                if (fileWrapper.classList.contains('show')) {
+                    slideNext();
+                } else {
+                    goToSlide(currentIndex + 1);
+                    resetAutoPlay();
+                }
                 e.preventDefault();
             }
         });
 
+        // 轮播逻辑
         const carouselSlides = document.querySelector('.carousel-slides');
         const slideItems = document.querySelectorAll('.carousel-slide');
         let currentIndex = 0;
@@ -449,6 +741,52 @@
         carouselContainer.addEventListener('mouseenter', pauseAutoPlay);
         carouselContainer.addEventListener('mouseleave', startAutoPlay);
         initCarousel();
+
+        // 档案袋切换：修复居中不跑屏
+        function updateSlide() {
+            const containerWidth = slideTrack.parentElement.clientWidth;
+            const centerX = containerWidth / 2;
+            const targetX = centerX - (currentBagIndex * bagWidth) - (bagWidth / 2);
+            slideTrack.style.transform = `translateX(${targetX}px)`;
+
+            fileBags.forEach((bag, idx) => {
+                bag.classList.remove('active', 'prev-1', 'prev-2', 'next-1', 'next-2');
+                if (idx === currentBagIndex) {
+                    bag.classList.add('active');
+                } else if (idx === currentBagIndex - 1) {
+                    bag.classList.add('prev-1');
+                } else if (idx === currentBagIndex - 2) {
+                    bag.classList.add('prev-2');
+                } else if (idx === currentBagIndex + 1) {
+                    bag.classList.add('next-1');
+                } else if (idx === currentBagIndex + 2) {
+                    bag.classList.add('next-2');
+                }
+            });
+        }
+
+        function slidePrev() {
+            if (currentBagIndex > 0) {
+                currentBagIndex--;
+                updateSlide();
+            }
+        }
+        function slideNext() {
+            if (currentBagIndex < fileBags.length - 1) {
+                currentBagIndex++;
+                updateSlide();
+            }
+        }
+
+        prevBtn.addEventListener('click', slidePrev);
+        nextBtn.addEventListener('click', slideNext);
+
+        window.addEventListener('resize', () => {
+            if (fileWrapper.classList.contains('show')) {
+                updateSlide();
+            }
+        });
     </script>
 </body>
 </html>
+
