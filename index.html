@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anlan.的小站 - 下拉动效</title>
     <style>
         /* 全局样式重置 */
@@ -11,21 +12,20 @@
             box-sizing: border-box;
         }
 
-        /* 页面基础样式 */
+        /* 页面基础样式 - 电脑端默认样式 */
         body {
-            min-height: 600vh; /* 加长页面，支持多次下拉 */
+            min-height: 600vh;
             background-color: #f0f2f5;
             font-family: "Microsoft Yahei", sans-serif;
             position: relative;
             scroll-padding-top: 80px;
             overflow-x: hidden;
-            /* 移除播放器的底部留白 */
             padding-bottom: 20px;
         }
 
-        /* 核心容器：包含图片和文字 */
+        /* 核心容器：电脑端默认横向布局 */
         .profile-container {
-            position: fixed; /* 固定定位，滚动时跟随 */
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -39,20 +39,18 @@
             border-radius: 10px;
         }
 
-        /* 第一次滚动：移到左上角 */
         .profile-container.scrolled {
             top: 20px;
             left: 20px;
             transform: translate(0, 0);
         }
 
-        /* 第二次滚动：头像+文字淡出 */
         .profile-container.fade-out {
             opacity: 0;
             pointer-events: none;
         }
 
-        /* 圆形头像样式 */
+        /* 电脑端头像默认尺寸 */
         .avatar {
             width: 170px;
             height: 170px;
@@ -61,28 +59,26 @@
             transition: width 0.5s ease, height 0.5s ease;
         }
 
-        /* 第一次滚动后头像缩小 */
         .profile-container.scrolled .avatar {
             width: 60px;
             height: 60px;
         }
 
-        /* 文字样式 */
+        /* 电脑端文字默认样式 */
         .intro-text {
             font-size: 24px;
             font-weight: 700;
             color: #333;
-            order: 2; /* 初始在图片下方 */
-            transition: font-size 0.5s ease, order 0.5s ease;
+            order: 2;
+            transition: font-size 0.5s ease;
         }
 
-        /* 第一次滚动后文字移到图片左侧+缩小 */
         .profile-container.scrolled .intro-text {
             font-size: 18px;
-            order: 1; /* 移到图片左侧 */
+            order: 1;
         }
 
-        /* 底部提示文字（滚动后隐藏） */
+        /* 底部提示文字 */
         .pull-tip {
             position: fixed;
             bottom: 20px;
@@ -105,48 +101,45 @@
             pointer-events: none;
         }
 
-        /* 个人简介+图片轮播容器 */
+        /* 电脑端简介+轮播容器 - 横向布局 */
         .intro-wrapper {
             position: absolute;
-            top: 100vh; /* 初始在视口外，下拉后可见 */
+            top: 100vh;
             left: 0;
             width: 100%;
             padding: 120px 20px 400px 20px;
             z-index: 90;
             display: flex;
             gap: 40px;
+            justify-content: center;
             align-items: flex-start;
             background-color: #f0f2f5;
-            flex-wrap: wrap;
-            justify-content: center;
             transition: opacity 0.6s ease;
         }
 
-        /* 第二次滚动：整个容器淡出 */
         .intro-wrapper.content-fade {
             opacity: 0;
             pointer-events: none;
         }
 
-        /* 个人简介文字区域 */
+        /* 电脑端简介文字区域 */
         .intro-content {
-            flex: 1;
-            min-width: 300px;
+            width: 40%;
+            min-width: 400px;
             color: #333;
             font-size: 16px;
             line-height: 1.8;
         }
 
-        /* 右侧图片轮播容器 */
+        /* 电脑端轮播容器 */
         .image-carousel {
-            flex: 1;
-            min-width: 300px;
+            width: 40%;
+            min-width: 400px;
             position: relative;
             overflow: hidden;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            height: 420px;
-            padding: 0 80px;
+            height: 400px; /* 恢复电脑端轮播高度 */
         }
 
         /* 轮播图片列表 */
@@ -157,7 +150,6 @@
             transition: transform 0.8s ease;
         }
 
-        /* 轮播单张图片 */
         .carousel-slide {
             width: calc(100% / 4);
             height: 100%;
@@ -169,27 +161,24 @@
             transition: opacity 0.8s ease;
         }
 
-        /* 当前显示的图片样式 */
         .carousel-slide.active {
             opacity: 1;
             transform: scale(1);
         }
 
-        /* 左右待切换图片样式 */
         .carousel-slide.prev, .carousel-slide.next {
             opacity: 0.6;
             transform: scale(0.95);
         }
 
         .carousel-img {
-            width: 100%;
-            height: 65%;
+            width: 90%;
+            height: 90%;
             object-fit: cover;
             display: block;
             border-radius: 6px;
         }
 
-        /* 轮播左右切换按钮 - 隐藏 */
         .carousel-btn {
             display: none;
         }
@@ -199,106 +188,130 @@
             scroll-behavior: smooth;
         }
 
-        /* 左侧滚动弹出菜单样式 */
+        /* 回到顶部锚点 */
         #top-anchor {
             position: absolute;
             top: 0;
             left: 0;
         }
-        .side-menu {
+
+        /* 电脑端回到顶部按钮 */
+        .back-to-top {
             position: fixed;
-            top: 50%;
-            left: -120px;
-            transform: translateY(-50%);
-            width: 100px;
-            background-color: white;
-            border-radius: 0 8px 8px 0;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            padding: 0;
-            margin: 0;
-            transition: left 0.5s ease, opacity 0.5s ease;
-            opacity: 0;
-            z-index: 9999;
-            overflow: visible;
-        }
-        .side-menu.show {
-            left: 0;
-            opacity: 1;
-        }
-        .side-item {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            position: relative;
-        }
-        .top-link {
-            display: block;
-            padding: 10px 0;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            color: #333333;
             text-align: center;
+            line-height: 50px;
+            font-size: 20px;
             text-decoration: none;
-            color: white;
-            background-color: #e74c3c;
-            transition: background-color 0.2s;
-            font-size: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 9999;
         }
-        .top-link:hover {
-            background-color: #c0392b;
+
+        .back-to-top.show {
+            opacity: 1;
+            pointer-events: auto;
         }
-        .top-link::after {
-            content: "↑";
+
+        .back-to-top:hover {
+            background-color: #f5f5f5;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-        .parent-link {
-            display: block;
-            padding: 10px 15px;
-            text-decoration: none;
-            color: #333;
-            background-color: #f1f1f1;
-            transition: background-color 0.2s;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .parent-link:hover {
-            background-color: #e8e8e8;
-        }
-        .child-link {
-            position: absolute;
-            top: 0;
-            left: -100px;
-            display: block;
-            width: 100px;
-            padding: 10px 15px;
-            text-decoration: none;
-            color: #2c3e50;
-            background-color: #f8f9fa;
-            border-radius: 8px 0 0 8px;
-            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
-            transition: left 0.3s ease;
-            z-index: -1;
-            font-size: 14px;
-        }
-        .parent-item:hover .child-link {
-            left: 0;
+
+        /* ========== 仅手机端生效的适配样式 ========== */
+        @media (max-width: 768px) {
+            /* 手机端核心容器垂直布局 */
+            .profile-container {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+            }
+
+            /* 手机端头像缩小 */
+            .avatar {
+                width: 120px;
+                height: 120px;
+            }
+
+            .profile-container.scrolled .avatar {
+                width: 50px;
+                height: 50px;
+            }
+
+            /* 手机端文字调整 */
+            .intro-text {
+                font-size: 20px;
+                order: 2;
+            }
+
+            .profile-container.scrolled .intro-text {
+                font-size: 16px;
+                order: 2;
+            }
+
+            /* 手机端简介容器垂直布局 */
+            .intro-wrapper {
+                flex-direction: column;
+                padding: 80px 15px 200px 15px;
+                gap: 20px;
+                align-items: center;
+            }
+
+            /* 手机端简介文字宽度100% */
+            .intro-content {
+                width: 100%;
+                min-width: unset;
+            }
+
+            /* 手机端轮播容器调整 */
+            .image-carousel {
+                width: 100%;
+                min-width: unset;
+                height: 250px;
+                padding: 0 10px;
+            }
+
+            /* 手机端轮播图片 */
+            .carousel-img {
+                width: 100%;
+                height: 90%;
+            }
+
+            /* 手机端回到顶部按钮缩小 */
+            .back-to-top {
+                width: 40px;
+                height: 40px;
+                line-height: 40px;
+                font-size: 18px;
+                bottom: 15px;
+                left: 15px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- 回到顶部锚点 -->
     <div id="top-anchor"></div>
 
-    <!-- 核心容器：图片+文字 -->
     <div class="profile-container">
         <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/3615797be1164e948b47cd47b615f500.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021641050F58C013C1C33BA2A007&rrcfp=dafada99&x-expires=2088664865&x-signature=L1xyKPGmCNaUPXAR8xH6r5jNBW8%3D" alt="角色头像" class="avatar">
         <div class="intro-text">Anlan.的小站</div>
     </div>
 
-    <!-- 底部提示文字 -->
     <div class="pull-tip">
         <span class="arrow">↓</span>
         下拉查看个人简介
         <span class="arrow">↓</span>
     </div>
 
-    <!-- 个人简介+图片轮播容器 -->
     <div class="intro-wrapper">
         <div class="intro-content">
             <h2 style="font-size: 32px; margin-bottom: 30px; color: #222;">站台简介</h2>
@@ -307,16 +320,16 @@
             <p style="margin-bottom: 20px;">在这里用来记录我感到新鲜的事物，日常生活，与精彩瞬间</p>
             <p style="margin-bottom: 20px;">就是用来记录问我游戏和生活的</p>
             <p style="margin-bottom: 10px;">pc：这个应该能活久一点吧，对。</p>
-            <p style="font-size: 18px; color: #666; margin-top: 40px;">继续下拉所有内容将淡出 ↓</p>
+            <p style="font-size: 18px; color: #666; margin-top: 40px;">下拉到900px所有内容将淡出 ↓</p>
         </div>
 
         <div class="image-carousel">
             <div class="carousel-slides">
                 <div class="carousel-slide active" data-index="0">
-                    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/962a1f8945f6485188ceb758f447f9f2.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021911328B83230DAB607BA20A1D&rrcfp=dafada99&x-expires=2088673892&x-signature=zcWJoXmIG0bKdIwkwYbP6RMR9R4%3D" alt="图片1" class="carousel-img">
+                    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/962a1f8945f6485188ceb758f447f9f2.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021911328B83230DAB607BA2A01D&rrcfp=dafada99&x-expires=2088673892&x-signature=zcWJoXmIG0bKdIwkwYbP6RMR9R4%3D" alt="图片1" class="carousel-img">
                 </div>
                 <div class="carousel-slide" data-index="1">
-                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/ce91f624a86c443d8e6ae826ddffff50.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021911328B83230DAB607BA20A1D&rrcfp=dafada99&x-expires=2088673892&x-signature=Vq5TQzjyJBlLeAoTr9l8cTRpBi8%3D" alt="图片2" class="carousel-img">
+                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/ce91f624a86c443d8e6ae826ddffff50.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021911328B83230DAB607BA2A01D&rrcfp=dafada99&x-expires=2088673892&x-signature=Vq5TQzjyJBlLeAoTr9l8cTRpBi8%3D" alt="图片2" class="carousel-img">
                 </div>
                 <div class="carousel-slide" data-index="2">
                     <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/329282fe014941bfa1b9ecb4bc193e52.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260302192540CE80E5D0EA5286D02377&rrcfp=dafada99&x-expires=2088674740&x-signature=9UNlpd9dxEqUK68SOskkCLdb004%3D" alt="夜景图" class="carousel-img">
@@ -328,44 +341,29 @@
         </div>
     </div>
 
-    <!-- 左侧滚动弹出菜单 -->
-    <ul class="side-menu" id="sideMenu">
-        <li class="side-item">
-            <a href="#top-anchor" class="top-link"></a>
-        </li>
-        <li class="side-item parent-item">
-            <a class="parent-link">页面1</a>
-            <a href="album.html" class="child-link">我的相册</a>
-        </li>
-        <li class="side-item parent-item">
-            <a class="parent-link">页面2</a>
-            <a href="game.html" class="child-link">游戏分享</a>
-        </li>
-        <li class="side-item parent-item">
-            <a class="parent-link">页面3</a>
-            <a href="life.html" class="child-link">生活记录</a>
-        </li>
-    </ul>
+    <a href="#top-anchor" class="back-to-top" id="backToTop">↑</a>
 
     <script>
-        // 核心滚动逻辑
         const profileContainer = document.querySelector('.profile-container');
         const pullTip = document.querySelector('.pull-tip');
         const introWrapper = document.querySelector('.intro-wrapper');
+        const backToTop = document.getElementById('backToTop');
         const FIRST_SCROLL = 50;
-        const SECOND_SCROLL = 800;
+        const SECOND_SCROLL = 900;
         const SCROLL_STEP = 150;
 
         window.addEventListener('scroll', function() {
             const scrollTop = window.scrollY;
+            
             if (scrollTop > FIRST_SCROLL) {
                 profileContainer.classList.add('scrolled');
                 pullTip.classList.add('hidden');
+                backToTop.classList.add('show');
             } else {
                 profileContainer.classList.remove('scrolled', 'fade-out');
                 introWrapper.classList.remove('content-fade');
                 pullTip.classList.remove('hidden');
-                sideMenu.classList.remove('show');
+                backToTop.classList.remove('show');
                 return;
             }
 
@@ -378,16 +376,8 @@
                 introWrapper.classList.remove('content-fade');
                 startAutoPlay();
             }
-
-            const triggerHeight = 900;
-            if (scrollTop > triggerHeight) {
-                sideMenu.classList.add('show');
-            } else {
-                sideMenu.classList.remove('show');
-            }
         });
 
-        // 键盘控制
         window.addEventListener('keydown', function(e) {
             if (e.keyCode === 38 || e.keyCode === 104) {
                 window.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
@@ -406,7 +396,6 @@
             }
         });
 
-        // 轮播逻辑
         const carouselSlides = document.querySelector('.carousel-slides');
         const slideItems = document.querySelectorAll('.carousel-slide');
         let currentIndex = 0;
@@ -460,15 +449,6 @@
         carouselContainer.addEventListener('mouseenter', pauseAutoPlay);
         carouselContainer.addEventListener('mouseleave', startAutoPlay);
         initCarousel();
-
-        // 左侧菜单交互
-        const sideMenu = document.getElementById('sideMenu');
-        const topLink = document.querySelector('.top-link');
-        topLink.addEventListener('click', function() {
-            setTimeout(() => {
-                sideMenu.classList.remove('show');
-            }, 300);
-        });
     </script>
 </body>
 </html>
