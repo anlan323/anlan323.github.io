@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏收藏列表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // Tailwind 配置
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#6B7280',
+                        dark: '#1F2937',
+                        light: '#F9FAFB',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            /* 分类卡片容器 */
+            .category-card {
+                @apply bg-white rounded-xl shadow-lg p-4 mb-8 border border-gray-100;
+            }
+            /* 每个游戏项独立成一个选项卡片 */
+            .game-option {
+                @apply flex items-start mb-4 p-4 rounded-lg bg-gray-50 border border-gray-100 transition-all hover:shadow-md hover:border-primary/20;
+            }
+            .game-img-container {
+                @apply flex-shrink-0 mr-4;
+            }
+            /* 放大游戏图片宽度：从w-16改为w-20 */
+            .game-vertical-img {
+                @apply w-20 h-28 object-cover rounded-md shadow-md;
+            }
+            .game-info {
+                @apply flex-grow mr-4;
+            }
+            /* 强制每25个字换行的样式 */
+            .game-review {
+                @apply text-gray-700 whitespace-pre-line;
+            }
+            .media-container {
+                @apply w-64 flex-shrink-0;
+            }
+            .carousel-container {
+                @apply relative overflow-hidden rounded-md mb-2;
+            }
+            .carousel {
+                @apply flex transition-transform duration-300 ease-in-out;
+            }
+            .carousel-img {
+                @apply w-full object-cover h-40 cursor-pointer;
+            }
+            .carousel-btn {
+                @apply absolute top-1/2 -translate-y-1/2 bg-black/50 text-white w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-black/70 z-10;
+            }
+            .carousel-prev {
+                @apply left-2;
+            }
+            .carousel-next {
+                @apply right-2;
+            }
+            .video-container {
+                @apply rounded-md overflow-hidden;
+            }
+            .game-video {
+                @apply w-full h-40 cursor-pointer;
+            }
+            .category-header {
+                @apply font-bold text-lg py-3 border-b border-gray-200 mb-4 flex items-center justify-center;
+            }
+            .avatar {
+                @apply w-8 h-8 rounded-full mr-2 object-cover;
+            }
+            .back-to-top {
+                @apply fixed bottom-6 left-6 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer opacity-0 transition-opacity duration-300 hover:bg-primary/90 z-50;
+            }
+            .back-to-top.show {
+                @apply opacity-100;
+            }
+            .modal {
+                @apply fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden;
+            }
+            .modal.show {
+                @apply flex;
+            }
+            .modal-content {
+                @apply max-w-4xl max-h-[90vh] relative;
+            }
+            .modal-img {
+                @apply max-w-full max-h-[90vh] object-contain;
+            }
+            .modal-video {
+                @apply max-w-full max-h-[90vh];
+            }
+            .modal-close {
+                @apply absolute top-4 right-4 w-8 h-8 bg-white/20 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-white/40;
+            }
+            /* 查看更多按钮样式 */
+            .view-more {
+                @apply w-full py-2 text-center text-primary font-medium cursor-pointer hover:text-primary/80 transition-colors border border-primary/20 rounded-lg mt-2;
+            }
+            /* 更多游戏内容默认隐藏 */
+            .more-games {
+                @apply hidden;
+            }
+            /* 返回主页按钮样式 */
+            .back-home {
+                @apply absolute top-4 left-4 bg-primary text-white px-4 py-2 rounded-lg shadow-md hover:bg-primary/90 transition-colors flex items-center z-40;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans relative">
+    <!-- 返回主页按钮 -->
+    <button class="back-home" id="backHome">
+        <i class="fa fa-home mr-2"></i>返回主页
+    </button>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl pt-16">
+        <!-- 分类卡片1：角色扮演类 -->
+        <div class="category-card">
+            <div class="category-header">
+                <img src="https://picsum.photos/200/200?random=1" alt="用户头像" class="avatar">
+                <span>游戏收藏夹 - 角色扮演类</span>
+            </div>
+            
+            <!-- 游戏选项1（独立条目） -->
+            <div class="game-option">
+                <div class="game-img-container">
+                    <img src="https://picsum.photos/200/400?random=10" alt="塞尔达传说" class="game-vertical-img">
+                </div>
+                <div class="game-info">
+                    <div class="font-bold text-lg mb-1">塞尔达传说：王国之泪</div>
+                    <div class="text-gray-600 mb-1">游玩时间：86小时</div>
+                    <div class="text-gray-600 mb-1">游玩方式：Switch 主机游玩</div>
+                    <div class="game-review" id="review1"></div>
+                </div>
+                <div class="media-container">
+                    <!-- 轮播图 -->
+                    <div class="carousel-container">
+                        <div class="carousel" id="carousel1">
+                            <img src="https://picsum.photos/800/600?random=101" alt="游戏截图1" class="carousel-img" data-index="0" data-carousel="1">
+                            <img src="https://picsum.photos/800/600?random=102" alt="游戏截图2" class="carousel-img" data-index="1" data-carousel="1">
+                            <img src="https://picsum.photos/800/600?random=103" alt="游戏截图3" class="carousel-img" data-index="2" data-carousel="1">
+                        </div>
+                        <button class="carousel-btn carousel-prev" data-carousel="1">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <button class="carousel-btn carousel-next" data-carousel="1">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <!-- 视频 -->
+                    <div class="video-container">
+                        <video src="https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" controls class="game-video" data-type="video"></video>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 游戏选项2（独立条目） -->
+            <div class="game-option">
+                <div class="game-img-container">
+                    <img src="https://picsum.photos/200/400?random=11" alt="原神" class="game-vertical-img">
+                </div>
+                <div class="game-info">
+                    <div class="font-bold text-lg mb-1">原神</div>
+                    <div class="text-gray-600 mb-1">游玩时间：420小时</div>
+                    <div class="text-gray-600 mb-1">游玩方式：手机/PC 双端游玩</div>
+                    <div class="game-review" id="review2"></div>
+                </div>
+                <div class="media-container">
+                    <!-- 轮播图 -->
+                    <div class="carousel-container">
+                        <div class="carousel" id="carousel2">
+                            <img src="https://picsum.photos/800/600?random=111" alt="游戏截图1" class="carousel-img" data-index="0" data-carousel="2">
+                            <img src="https://picsum.photos/800/600?random=112" alt="游戏截图2" class="carousel-img" data-index="1" data-carousel="2">
+                        </div>
+                        <button class="carousel-btn carousel-prev" data-carousel="2">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <button class="carousel-btn carousel-next" data-carousel="2">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 查看更多按钮 -->
+            <div class="view-more" id="viewMoreRPG">
+                <i class="fa fa-chevron-down mr-1"></i>查看更多角色扮演类游戏
+            </div>
+            
+            <!-- 更多游戏内容 -->
+            <div class="more-games" id="moreRPGGames">
+                <!-- 游戏选项5 -->
+                <div class="game-option">
+                    <div class="game-img-container">
+                        <img src="https://picsum.photos/200/400?random=14" alt="最终幻想16" class="game-vertical-img">
+                    </div>
+                    <div class="game-info">
+                        <div class="font-bold text-lg mb-1">最终幻想16</div>
+                        <div class="text-gray-600 mb-1">游玩时间：68小时</div>
+                        <div class="text-gray-600 mb-1">游玩方式：PS5 主机游玩</div>
+                        <div class="game-review" id="review5"></div>
+                    </div>
+                    <div class="media-container">
+                        <!-- 轮播图 -->
+                        <div class="carousel-container">
+                            <div class="carousel" id="carousel5">
+                                <img src="https://picsum.photos/800/600?random=141" alt="游戏截图1" class="carousel-img" data-index="0" data-carousel="5">
+                                <img src="https://picsum.photos/800/600?random=142" alt="游戏截图2" class="carousel-img" data-index="1" data-carousel="5">
+                            </div>
+                            <button class="carousel-btn carousel-prev" data-carousel="5">
+                                <i class="fa fa-chevron-left"></i>
+                            </button>
+                            <button class="carousel-btn carousel-next" data-carousel="5">
+                                <i class="fa fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 游戏选项6 -->
+                <div class="game-option">
+                    <div class="game-img-container">
+                        <img src="https://picsum.photos/200/400?random=15" alt="博德之门3" class="game-vertical-img">
+                    </div>
+                    <div class="game-info">
+                        <div class="font-bold text-lg mb-1">博德之门3</div>
+                        <div class="text-gray-600 mb-1">游玩时间：150小时</div>
+                        <div class="text-gray-600 mb-1">游玩方式：PC端游玩</div>
+                        <div class="game-review" id="review6"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分类卡片2：动作竞技类 -->
+        <div class="category-card">
+            <div class="category-header">
+                <img src="https://picsum.photos/200/200?random=2" alt="用户头像" class="avatar">
+                <span>游戏收藏夹 - 动作竞技类</span>
+            </div>
+            
+            <!-- 游戏选项3（独立条目） -->
+            <div class="game-option">
+                <div class="game-img-container">
+                    <img src="https://picsum.photos/200/400?random=12" alt="英雄联盟" class="game-vertical-img">
+                </div>
+                <div class="game-info">
+                    <div class="font-bold text-lg mb-1">英雄联盟</div>
+                    <div class="text-gray-600 mb-1">游玩时间：1800小时</div>
+                    <div class="text-gray-600 mb-1">游玩方式：PC端在线游玩</div>
+                    <div class="game-review" id="review3"></div>
+                </div>
+                <div class="media-container">
+                    <!-- 视频 -->
+                    <div class="video-container">
+                        <video src="https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" controls class="game-video" data-type="video"></video>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 游戏选项4（独立条目） -->
+            <div class="game-option">
+                <div class="game-img-container">
+                    <img src="https://picsum.photos/200/400?random=13" alt="赛博朋克2077" class="game-vertical-img">
+                </div>
+                <div class="game-info">
+                    <div class="font-bold text-lg mb-1">赛博朋克2077</div>
+                    <div class="text-gray-600 mb-1">游玩时间：120小时</div>
+                    <div class="text-gray-600 mb-1">游玩方式：PS5 主机游玩</div>
+                    <div class="game-review" id="review4"></div>
+                </div>
+                <!-- 无媒体内容 -->
+            </div>
+            
+            <!-- 查看更多按钮 -->
+            <div class="view-more" id="viewMoreAction">
+                <i class="fa fa-chevron-down mr-1"></i>查看更多动作竞技类游戏
+            </div>
+            
+            <!-- 更多游戏内容 -->
+            <div class="more-games" id="moreActionGames">
+                <!-- 游戏选项7 -->
+                <div class="game-option">
+                    <div class="game-img-container">
+                        <img src="https://picsum.photos/200/400?random=16" alt="街头霸王6" class="game-vertical-img">
+                    </div>
+                    <div class="game-info">
+                        <div class="font-bold text-lg mb-1">街头霸王6</div>
+                        <div class="text-gray-600 mb-1">游玩时间：90小时</div>
+                        <div class="text-gray-600 mb-1">游玩方式：PS5 主机游玩</div>
+                        <div class="game-review" id="review7"></div>
+                    </div>
+                    <div class="media-container">
+                        <!-- 视频 -->
+                        <div class="video-container">
+                            <video src="https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" controls class="game-video" data-type="video"></video>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 游戏选项8 -->
+                <div class="game-option">
+                    <div class="game-img-container">
+                        <img src="https://picsum.photos/200/400?random=17" alt="CS2" class="game-vertical-img">
+                    </div>
+                    <div class="game-info">
+                        <div class="font-bold text-lg mb-1">反恐精英2</div>
+                        <div class="text-gray-600 mb-1">游玩时间：800小时</div>
+                        <div class="text-gray-600 mb-1">游玩方式：PC端在线游玩</div>
+                        <div class="game-review" id="review8"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 返回顶部按钮 -->
+        <button class="back-to-top" id="backToTop">
+            <i class="fa fa-chevron-up"></i>
+        </button>
+
+        <!-- 图片/视频放大查看模态框 -->
+        <div class="modal" id="mediaModal">
+            <div class="modal-content">
+                <img src="" alt="放大图片" class="modal-img" id="modalImage">
+                <video controls class="modal-video hidden" id="modalVideo"></video>
+                <button class="modal-close" id="closeModal">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <script>
+            // 文本每25个字分行的函数
+            function splitTextByLength(text, length = 25) {
+                let result = '';
+                for (let i = 0; i < text.length; i += length) {
+                    result += text.substring(i, i + length) + '\n';
+                }
+                return result.trim();
+            }
+            
+            // 轮播图功能
+            document.addEventListener('DOMContentLoaded', function() {
+                // 设置游戏评价文本并自动分行
+                const reviewTexts = {
+                    review1: '自由度极高的开放世界游戏，物理引擎和创意玩法令人惊叹，是塞尔达系列的又一巅峰之作。谜题设计巧妙，探索体验无与伦比，唯一的缺点是后期内容略有重复。',
+                    review2: '二次元开放世界的标杆之作，美术风格和音乐堪称顶级，角色设计讨喜。虽然抽卡系统有争议，但免费玩家也能获得不错的游戏体验，版本更新稳定，内容丰富。',
+                    review3: 'MOBA类游戏的经典之作，英雄池丰富，战术多样，竞技性强。虽然上手难度较高，但精通后的成就感无可比拟。游戏平衡性持续优化，赛事体系完善，是电竞的代表之作。',
+                    review4: '画面和世界观构建极为出色，剧情跌宕起伏，角色塑造成功。虽然发售初期优化问题严重，但经过多次更新后体验大幅提升，是一款值得深入体验的赛博朋克风格RPG。',
+                    review5: '最终幻想系列的全新力作，剧情宏大叙事精彩，战斗系统革新性强，画面表现力达到次世代水准，音乐依旧保持系列高水准，是日式RPG的标杆之作。',
+                    review6: 'DND规则下的CRPG神作，超高的自由度和沉浸式体验，角色塑造丰满，剧情分支丰富，战术战斗深度十足，多人联机体验也非常出色。',
+                    review7: '格斗游戏的新标杆，画面表现出色，战斗系统易上手难精通，角色平衡性好，网战体验流畅，剧情模式和街机模式内容丰富，适合不同类型玩家。',
+                    review8: '经典射击游戏的全面重制，画面和物理引擎大幅升级，竞技性依旧顶尖，社区生态完善，赛事体系成熟，是FPS游戏的常青树。'
+                };
+                
+                // 为每个评价文本设置分行后的内容
+                for (const [id, text] of Object.entries(reviewTexts)) {
+                    document.getElementById(id).textContent = splitTextByLength(text, 25);
+                }
+                
+                // 轮播图初始化
+                const carousels = document.querySelectorAll('.carousel-container');
+                carousels.forEach(container => {
+                    const carousel = container.querySelector('.carousel');
+                    const prevBtn = container.querySelector('.carousel-prev');
+                    const nextBtn = container.querySelector('.carousel-next');
+                    const carouselId = prevBtn.getAttribute('data-carousel');
+                    const images = carousel.querySelectorAll('.carousel-img');
+                    let currentIndex = 0;
+                    const totalImages = images.length;
+                    
+                    // 设置轮播图宽度
+                    carousel.style.width = `${totalImages * 100}%`;
+                    images.forEach(img => {
+                        img.style.width = `${100 / totalImages}%`;
+                    });
+                    
+                    // 自动轮播
+                    let autoPlay = setInterval(() => {
+                        currentIndex = (currentIndex + 1) % totalImages;
+                        updateCarousel();
+                    }, 5000);
+                    
+                    // 鼠标悬停暂停轮播
+                    container.addEventListener('mouseenter', () => {
+                        clearInterval(autoPlay);
+                    });
+                    
+                    // 鼠标离开恢复轮播
+                    container.addEventListener('mouseleave', () => {
+                        autoPlay = setInterval(() => {
+                            currentIndex = (currentIndex + 1) % totalImages;
+                            updateCarousel();
+                        }, 5000);
+                    });
+                    
+                    // 上一张
+                    prevBtn.addEventListener('click', () => {
+                        currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                        updateCarousel();
+                    });
+                    
+                    // 下一张
+                    nextBtn.addEventListener('click', () => {
+                        currentIndex = (currentIndex + 1) % totalImages;
+                        updateCarousel();
+                    });
+                    
+                    // 更新轮播图位置
+                    function updateCarousel() {
+                        const translateValue = -currentIndex * (100 / totalImages);
+                        carousel.style.transform = `translateX(${translateValue}%)`;
+                    }
+                    
+                    // 触摸滑动支持
+                    let startX = 0;
+                    let isDragging = false;
+                    
+                    carousel.addEventListener('touchstart', (e) => {
+                        startX = e.touches[0].clientX;
+                        isDragging = true;
+                        clearInterval(autoPlay);
+                    });
+                    
+                    carousel.addEventListener('touchmove', (e) => {
+                        if (!isDragging) return;
+                        const currentX = e.touches[0].clientX;
+                        const diffX = startX - currentX;
+                        
+                        // 滑动距离超过50px时切换图片
+                        if (diffX > 50) {
+                            currentIndex = (currentIndex + 1) % totalImages;
+                            updateCarousel();
+                            startX = currentX;
+                        } else if (diffX < -50) {
+                            currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                            updateCarousel();
+                            startX = currentX;
+                        }
+                    });
+                    
+                    carousel.addEventListener('touchend', () => {
+                        isDragging = false;
+                        // 恢复自动轮播
+                        autoPlay = setInterval(() => {
+                            currentIndex = (currentIndex + 1) % totalImages;
+                            updateCarousel();
+                        }, 5000);
+                    });
+                });
+                
+                // 返回顶部按钮
+                const backToTopBtn = document.getElementById('backToTop');
+                
+                window.addEventListener('scroll', () => {
+                    // 滚动超过300px时显示按钮
+                    if (window.scrollY > 300) {
+                        backToTopBtn.classList.add('show');
+                    } else {
+                        backToTopBtn.classList.remove('show');
+                    }
+                });
+                
+                backToTopBtn.addEventListener('click', () => {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+                
+                // 图片/视频放大查看功能
+                const modal = document.getElementById('mediaModal');
+                const modalImage = document.getElementById('modalImage');
+                const modalVideo = document.getElementById('modalVideo');
+                const closeModal = document.getElementById('closeModal');
+                
+                // 图片点击放大
+                const carouselImages = document.querySelectorAll('.carousel-img');
+                carouselImages.forEach(img => {
+                    img.addEventListener('click', () => {
+                        modalImage.src = img.src;
+                        modalImage.classList.remove('hidden');
+                        modalVideo.classList.add('hidden');
+                        modal.classList.add('show');
+                    });
+                });
+                
+                // 视频点击放大
+                const gameVideos = document.querySelectorAll('.game-video');
+                gameVideos.forEach(video => {
+                    video.addEventListener('click', () => {
+                        modalVideo.src = video.src;
+                        modalVideo.classList.remove('hidden');
+                        modalImage.classList.add('hidden');
+                        modal.classList.add('show');
+                    });
+                });
+                
+                // 关闭模态框
+                closeModal.addEventListener('click', () => {
+                    modal.classList.remove('show');
+                    modalVideo.pause();
+                });
+                
+                // 点击模态框背景关闭
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('show');
+                        modalVideo.pause();
+                    }
+                });
+                
+                // ESC键关闭模态框
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modal.classList.contains('show')) {
+                        modal.classList.remove('show');
+                        modalVideo.pause();
+                    }
+                });
+                
+                // 查看更多功能
+                const viewMoreRPG = document.getElementById('viewMoreRPG');
+                const moreRPGGames = document.getElementById('moreRPGGames');
+                const viewMoreAction = document.getElementById('viewMoreAction');
+                const moreActionGames = document.getElementById('moreActionGames');
+                
+                // 角色扮演类查看更多
+                viewMoreRPG.addEventListener('click', () => {
+                    if (moreRPGGames.classList.contains('hidden')) {
+                        moreRPGGames.classList.remove('hidden');
+                        viewMoreRPG.innerHTML = '<i class="fa fa-chevron-up mr-1"></i>收起更多角色扮演类游戏';
+                    } else {
+                        moreRPGGames.classList.add('hidden');
+                        viewMoreRPG.innerHTML = '<i class="fa fa-chevron-down mr-1"></i>查看更多角色扮演类游戏';
+                    }
+                });
+                
+                // 动作竞技类查看更多
+                viewMoreAction.addEventListener('click', () => {
+                    if (moreActionGames.classList.contains('hidden')) {
+                        moreActionGames.classList.remove('hidden');
+                        viewMoreAction.innerHTML = '<i class="fa fa-chevron-up mr-1"></i>收起更多动作竞技类游戏';
+                    } else {
+                        moreActionGames.classList.add('hidden');
+                        viewMoreAction.innerHTML = '<i class="fa fa-chevron-down mr-1"></i>查看更多动作竞技类游戏';
+                    }
+                });
+                
+                // 返回主页功能（重点修改这里！）
+                const backHomeBtn = document.getElementById('backHome');
+                backHomeBtn.addEventListener('click', () => {
+                    // ========== 只需要改下面这行的网址 ==========
+                    const targetUrl = 'https://anlan323.github.io/'; 
+                    // ========== 只需要改上面这行的网址 ==========
+                    
+                    // 跳转到指定网址
+                    window.location.href = targetUrl;
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>
