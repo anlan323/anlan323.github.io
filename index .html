@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anlan.的小站 - 1.1.4</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 页面基础样式 - 电脑端默认样式 */
+        body {
+            min-height: 800vh; /* 增加高度以容纳游戏统计模块 */
+            background-color: #f0f2f5;
+            font-family: "Microsoft Yahei", sans-serif;
+            position: relative;
+            scroll-padding-top: 80px;
+            overflow-x: hidden;
+            padding-bottom: 20px;
+        }
+
+        /* 核心容器：电脑端默认横向布局 */
+        .profile-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.5s ease, opacity 0.6s ease 0.1s;
+            z-index: 100;
+            background-color: rgba(240, 242, 245, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .profile-container.scrolled {
+            top: 20px;
+            left: 20px;
+            transform: translate(0, 0);
+        }
+
+        .profile-container.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 电脑端头像默认尺寸 */
+        .avatar {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            object-fit: cover;
+            transition: width 0.5s ease, height 0.5s ease;
+        }
+
+        .profile-container.scrolled .avatar {
+            width: 60px;
+            height: 60px;
+        }
+
+        /* 电脑端文字默认样式 */
+        .intro-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            order: 2;
+            transition: font-size 0.5s ease;
+        }
+
+        .profile-container.scrolled .intro-text {
+            font-size: 18px;
+            order: 1;
+        }
+
+        /* 底部提示文字 */
+        .pull-tip {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #666;
+            transition: opacity 0.3s ease;
+            z-index: 95;
+        }
+
+        .arrow {
+            margin: 0 8px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .pull-tip.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 电脑端简介+轮播容器 - 横向布局 */
+        .intro-wrapper {
+            position: absolute;
+            top: 100vh;
+            left: 0;
+            width: 100%;
+            padding: 120px 20px 400px 20px;
+            z-index: 90;
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: flex-start;
+            background-color: #f0f2f5;
+            opacity: 0; /* 初始透明 */
+            visibility: hidden; /* 初始不可见 */
+            transition: opacity 0.8s ease, visibility 0.8s ease; /* 淡入淡出动画 */
+        }
+
+        /* 简介模块显示样式 */
+        .intro-wrapper.content-show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .intro-wrapper.content-fade {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 电脑端简介文字区域 */
+        .intro-content {
+            width: 40%;
+            min-width: 400px;
+            color: #333;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        /* 电脑端轮播容器 */
+        .image-carousel {
+            width: 40%;
+            min-width: 400px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 400px;
+        }
+
+        /* 轮播图片列表 */
+        .carousel-slides {
+            display: flex;
+            width: calc(100% * 4);
+            height: 100%;
+            transition: transform 0.8s ease;
+        }
+
+        .carousel-slide {
+            width: calc(100% / 4);
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            opacity: 0.4;
+            transition: opacity 0.8s ease;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .carousel-slide.prev, .carousel-slide.next {
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
+
+        .carousel-img {
+            width: 90%;
+            height: 90%;
+            object-fit: cover;
+            display: block;
+            border-radius: 6px;
+        }
+
+        .carousel-btn {
+            display: none;
+        }
+
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* 回到顶部锚点 */
+        #top-anchor {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* 电脑端回到顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            color: #333333;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            text-decoration: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 9999;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .back-to-top:hover {
+            background-color: #f5f5f5;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* ========== 左侧选项卡样式（整合核心） ========== */
+        /* 选项卡容器样式（初始隐藏） */
+        .tab-nav {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%) translateX(-100%); /* 初始隐藏在左侧 */
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 120px;
+            z-index: 999;
+            opacity: 0; /* 初始透明 */
+            transition: all 0.5s ease-out; /* 改为ease-out更顺滑 */
+        }
+        /* 容器弹出样式 */
+        .tab-nav.container-show {
+            transform: translateY(-50%) translateX(0) !important;
+            opacity: 1 !important;
+        }
+        /* 选项卡样式（初始隐藏） */
+        .tab-item {
+            width: 120px;
+            height: 45px;
+            line-height: 45px;
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+            text-decoration: none;
+            transition: all 0.3s ease-out; /* 改为ease-out更顺滑 */
+            border-right: 3px solid transparent;
+            /* 初始隐藏 */
+            transform: translateX(-20px);
+            opacity: 0;
+        }
+        /* 选项弹出样式 */
+        .tab-item.show {
+            transform: translateX(0) !important;
+            opacity: 1 !important;
+        }
+        /* 激活样式 */
+        .tab-item.active {
+            border-right: 3px solid #6633cc !important;
+            color: #6633cc !important;
+            font-weight: bold !important;
+        }
+        /* hover样式 */
+        .tab-item:hover {
+            background: #f8f9fa;
+            color: #6633cc;
+            transform: translateX(5px) !important;
+        }
+
+        /* ========== 游戏时长统计模块样式 ========== */
+        .stats-container {
+            position: absolute;
+            top: 1600px; /* 修改：从1200改为1600 */
+            left: 0;
+            width: 100%;
+            padding: 40px 20px;
+            z-index: 80;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .stats-container.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .stats-inner {
+            width: 90%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .stats-inner h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 28px;
+        }
+
+        /* 主体布局 - 电脑端两列各占50% */
+        .main-layout {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 2/4 区域 (50%) - 图表区域 */
+        .two-fourths {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 2/4 区域 (50%) - 视频文本区域 */
+        .video-text-section {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 720px;
+        }
+
+        /* 视频区块 */
+        .video-block {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            height: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 100%;
+            background-color: #333;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            position: relative;
+        }
+
+        /* 文本区块 */
+        .text-block {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            height: 50%;
+            overflow-y: auto;
+        }
+
+        .text-content {
+            line-height: 1.6;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .text-content h4 {
+            margin-bottom: 15px;
+            color: #222;
+            font-size: 16px;
+        }
+
+        .text-content p {
+            margin-bottom: 10px;
+        }
+
+        /* 第一个模块 - 环形图 + 统计信息 */
+        .module-1 {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            height: 300px;
+        }
+
+        .chart-circle {
+            width: 50%;
+            height: 100%;
+        }
+
+        .stats-info {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .stats-item {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .stats-percent {
+            font-weight: bold;
+            color: #66633cc; /* 适配站点主色调 */
+        }
+
+        /* 第二个模块 - 竖向柱状图 */
+        .module-2 {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            height: 400px;
+        }
+
+        .chart-bar {
+            width: 100%;
+            height: 100%;
+        }
+
+        h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        /* ========== 手机端适配（整合） ========== */
+        @media (max-width: 768px) {
+            /* 头像容器手机端 */
+            .profile-container {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+            }
+            .avatar {
+                width: 120px;
+                height: 120px;
+            }
+            .profile-container.scrolled .avatar {
+                width: 50px;
+                height: 50px;
+            }
+            .intro-text {
+                font-size: 20px;
+                order: 2;
+            }
+            .profile-container.scrolled .intro-text {
+                font-size: 16px;
+                order: 2;
+            }
+            /* 简介+轮播手机端 */
+            .intro-wrapper {
+                flex-direction: column;
+                padding: 80px 15px 200px 15px;
+                gap: 20px;
+                align-items: center;
+            }
+            .intro-content {
+                width: 100%;
+                min-width: unset;
+            }
+            .image-carousel {
+                width: 100%;
+                min-width: unset;
+                height: 250px;
+                padding: 0 10px;
+            }
+            .carousel-img {
+                width: 100%;
+                height: 90%;
+            }
+            /* 回到顶部手机端 */
+            .back-to-top {
+                width: 40px;
+                height: 40px;
+                line-height: 40px;
+                font-size: 18px;
+                bottom: 15px;
+                left: 15px;
+            }
+            /* 选项卡手机端 */
+            .tab-nav {
+                top: 80px !important;
+                left: 50% !important;
+                transform: translateX(-50%) translateY(-100%) !important; /* 初始隐藏在顶部 */
+                flex-direction: row !important;
+                width: 90% !important;
+                border-radius: 8px 8px 0 0 !important;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            .tab-nav.container-show {
+                transform: translateX(-50%) translateY(0) !important;
+            }
+            .tab-item {
+                width: auto !important;
+                height: auto !important;
+                line-height: normal !important;
+                padding: 10px 16px !important;
+                transform: translateY(-10px) !important;
+                border-right: none !important;
+                border-bottom: 3px solid transparent !important;
+                display: inline-block !important;
+            }
+            .tab-item.show {
+                transform: translateY(0) !important;
+            }
+            .tab-item:hover {
+                transform: translateY(0) !important;
+                background-color: #f8f9fa;
+            }
+            .tab-item.active {
+                border-right: none !important;
+                border-bottom: 3px solid #6633cc !important;
+            }
+
+            /* 游戏统计模块手机端适配 */
+            .main-layout {
+                flex-direction: column;
+            }
+            .two-fourths, .video-text-section {
+                width: 100%;
+                height: auto;
+            }
+            .module-1 {
+                flex-direction: column;
+                height: auto;
+                padding: 20px;
+                gap: 20px;
+            }
+            .chart-circle, .stats-info {
+                width: 100%;
+            }
+            .chart-circle {
+                height: 250px;
+            }
+            .module-2 {
+                height: 350px;
+            }
+            .video-text-section {
+                height: auto;
+            }
+            .video-block, .text-block {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="top-anchor"></div>
+
+    <!-- 头像容器 -->
+    <div class="profile-container">
+        <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/3615797be1164e948b47cd47b615f500.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021641050F58C013C1C33BA2A007&rrcfp=dafada99&x-expires=2088664865&x-signature=L1xyKPGmCNaUPXAR8xH6r5jNBW8%3D" alt="角色头像" class="avatar">
+        <div class="intro-text">Anlan.的小站</div>
+    </div>
+
+    <!-- 选项卡导航（整合核心） -->
+    <div class="tab-nav" id="tabNav">
+        <a href="core.html" class="tab-item">1</a>
+        <a href="allout.html" class="tab-item">2</a>
+        <a href="special.html" class="tab-item">3</a>
+        <a href="daily.html" class="tab-item">4</a>
+        <a href="game.html" class="tab-item">5</a>
+    </div>
+
+    <!-- 下拉提示 -->
+    <div class="pull-tip">
+        <span class="arrow">↓</span>
+        下拉查看个人简介
+        <span class="arrow">↓</span>
+    </div>
+
+    <!-- 简介+轮播容器 -->
+    <div class="intro-wrapper" id="introWrapper">
+        <div class="intro-content">
+            <h2 style="font-size: 32px; margin-bottom: 30px; color: #222;">站台简介</h2>
+            <p style="margin-bottom: 20px; font-size: 18px;">欢迎来到 Anlan.的小站！</p>
+            <p style="margin-bottom: 20px;">这里是我用于记录搭建的小站</p>
+            <p style="margin-bottom: 20px;">在这里用来记录我感到新鲜的事物，日常生活，与精彩瞬间</p>
+            <p style="margin-bottom: 20px;">就是用来记录问我游戏和生活的</p>
+            <p style="margin-bottom: 10px;">pc：这个应该能活久一点吧，对。</p>
+            <p style="font-size: 18px; color: #666; margin-top: 40px;">下拉查看更多内容 ↓</p>
+        </div>
+
+        <div class="image-carousel">
+            <div class="carousel-slides">
+                <div class="carousel-slide active" data-index="0">
+                    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/962a1f8945f6485188ceb758f447f9f2.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021911328B83230DAB607BA2A01D&rrcfp=dafada99&x-expires=2088673892&x-signature=zcWJoXmIG0bKdIwkwYbP6RMR9R4%3D" alt="图片1" class="carousel-img">
+                </div>
+                <div class="carousel-slide" data-index="1">
+                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/ce91f624a86c443d8e6ae826ddffff50.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603021911328B83230DAB607BA2A01D&rrcfp=dafada99&x-expires=2088673892&x-signature=Vq5TQzjyJBlLeAoTr9l8cTRpBi8%3D" alt="图片2" class="carousel-img">
+                </div>
+                <div class="carousel-slide" data-index="2">
+                    <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/329282fe014941bfa1b9ecb4bc193e52.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260302192540CE80E5D0EA5286D02377&rrcfp=dafada99&x-expires=2088674740&x-signature=9UNlpd9dxEqUK68SOskkCLdb004%3D" alt="夜景图" class="carousel-img">
+                </div>
+                <div class="carousel-slide" data-index="3">
+                    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/36f230152b534f5493d9b01f30c3fc49.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260302191714DF06D2915383E3A5A3E1&rrcfp=dafada99&x-expires=2088674234&x-signature=XTyhqq9wVMDxj%2FidfQRKL%2FH5nEg%3D" alt="图片4" class="carousel-img">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏时长统计模块 -->
+    <div class="stats-container" id="statsPage">
+        <div class="stats-inner">
+            <h2>游戏时长统计分析</h2>
+            <div class="main-layout">
+                <!-- 2/4 区域 - 图表模块 -->
+                <div class="two-fourths">
+                    <!-- 第一个模块 - 环形图 + 统计信息 -->
+                    <div class="module-1">
+                        <div class="chart-circle" id="circleChart"></div>
+                        <div class="stats-info">
+                            <div class="stats-item">休闲游戏：<span class="stats-percent">35%</span></div>
+                            <div class="stats-item">竞技游戏：<span class="stats-percent">45%</span></div>
+                            <div class="stats-item">角色扮演：<span class="stats-percent">15%</span></div>
+                            <div class="stats-item">其他类型：<span class="stats-percent">5%</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 第二个模块 - 竖向柱状图 -->
+                    <div class="module-2">
+                        <h3>游戏游玩时长</h3>
+                        <div class="chart-bar" id="barChart"></div>
+                    </div>
+                </div>
+
+                <!-- 2/4 区域 - 视频+文本模块 -->
+                <div class="video-text-section">
+                    <!-- 视频区块 -->
+                    <div class="video-block">
+                        <div class="video-container">
+                            <!-- 这里可以替换为实际视频 -->
+                            <video width="100%" height="100%" controls poster="https://picsum.photos/800/400">
+                                <source src="your-video.mp4" type="video/mp4">
+                                您的浏览器不支持HTML5视频播放
+                            </video>
+                        </div>
+                    </div>
+
+                    <!-- 文本区块 -->
+                    <div class="text-block">
+                        <div class="text-content">
+                            <h4></h4>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p>2026-03-07</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 回到顶部按钮 -->
+    <a href="#top-anchor" class="back-to-top" id="backToTop">↑</a>
+
+    <script>
+        // ========== 原有功能：头像+轮播+回到顶部 ==========
+        const profileContainer = document.querySelector('.profile-container');
+        const pullTip = document.querySelector('.pull-tip');
+        const introWrapper = document.getElementById('introWrapper'); // 改为ID选择器
+        const backToTop = document.getElementById('backToTop');
+        const FIRST_SCROLL = 50;
+        const INTRO_SHOW_SCROLL = 100; // 简介模块显示的滚动阈值
+        const INTRO_FADE_SCROLL = 800; // 简介模块淡出的滚动阈值
+        const SCROLL_STEP = 150;
+
+        // 轮播逻辑
+        const carouselSlides = document.querySelector('.carousel-slides');
+        const slideItems = document.querySelectorAll('.carousel-slide');
+        let currentIndex = 0;
+        const slideCount = slideItems.length;
+        const AUTO_PLAY_INTERVAL = 1450;
+        let autoPlayTimer = null;
+
+        // 初始化轮播
+        function initCarousel() {
+            updateSlideStyles();
+            carouselSlides.style.transform = `translateX(-${(100 / slideCount) * currentIndex}%)`;
+            startAutoPlay();
+        }
+
+        function updateSlideStyles() {
+            slideItems.forEach(item => {
+                item.classList.remove('active', 'prev', 'next');
+            });
+            slideItems[currentIndex].classList.add('active');
+            const prevIndex = (currentIndex - 1 + slideCount) % slideCount;
+            const nextIndex = (currentIndex + 1) % slideCount;
+            slideItems[prevIndex].classList.add('prev');
+            slideItems[nextIndex].classList.add('next');
+        }
+
+        function goToSlide(index) {
+            currentIndex = (index + slideCount) % slideCount;
+            carouselSlides.style.transform = `translateX(-${(100 / slideCount) * currentIndex}%)`;
+            updateSlideStyles();
+        }
+
+        function startAutoPlay() {
+            if (autoPlayTimer) clearInterval(autoPlayTimer);
+            autoPlayTimer = setInterval(() => {
+                goToSlide(currentIndex + 1);
+            }, AUTO_PLAY_INTERVAL);
+        }
+
+        function pauseAutoPlay() {
+            if (autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+            }
+        }
+
+        function resetAutoPlay() {
+            pauseAutoPlay();
+            startAutoPlay();
+        }
+
+        // 轮播鼠标交互
+        const carouselContainer = document.querySelector('.image-carousel');
+        carouselContainer.addEventListener('mouseenter', pauseAutoPlay);
+        carouselContainer.addEventListener('mouseleave', startAutoPlay);
+
+        // ========== 游戏统计模块相关变量 ==========
+        const statsPage = document.getElementById('statsPage');
+        const gameData = [
+            { name: "", time: "128小时", icon: "", value: 128 },
+            { name: "", time: "105小时", icon: "", value: 105 },
+            { name: "", time: "92小时", icon: "", value: 92 },
+            { name: "", time: "78小时", icon: "", value: 78 },
+            { name: "", time: "65小时", icon: "", value: 65 },
+            { name: "", time: "58小时", icon: "", value: 58 },
+            { name: "", time: "45小时", icon: "", value: 45 },
+            { name: "", time: "38小时", icon: "", value: 38 },
+            { name: "", time: "32小时", icon: "️", value: 32 },
+            { name: "", time: "28小时", icon: "", value: 28 }
+        ];
+        let isFirstShow = true;
+        let circleChartInstance = null;
+        let barChartInstance = null;
+
+        // 初始化游戏统计图表
+        function initCharts() {
+            // 初始化环形图
+            circleChartInstance = echarts.init(document.getElementById('circleChart'));
+            circleChartInstance.setOption({
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c}%'
+                },
+                series: [
+                    {
+                        name: '游戏类型占比',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        label: {
+                            show: true,
+                            position: 'center',
+                            formatter: '{d}%'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '20',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        animationDuration: 1500,
+                        animationEasing: 'cubicOut',
+                        data: [
+                            { value: 35, name: '休闲游戏' },
+                            { value: 45, name: '竞技游戏' },
+                            { value: 15, name: '角色扮演' },
+                            { value: 5, name: '其他类型' }
+                        ]
+                    }
+                ]
+            });
+
+            // 初始化竖向柱状图
+            barChartInstance = echarts.init(document.getElementById('barChart'));
+            const xData = gameData.map(item => item.name);
+            const yData = gameData.map(item => item.value);
+            const icons = gameData.map(item => item.icon);
+
+            barChartInstance.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        const index = params[0].dataIndex;
+                        return `${icons[index]} ${params[0].name}<br/>游玩时长：${params[0].value}小时`;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: xData,
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 30
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '时长 (小时)'
+                },
+                series: [
+                    {
+                        name: '游玩时长',
+                        type: 'bar',
+                        data: yData,
+                        itemStyle: {
+                            color: function(params) {
+                                const colorList = ['#6633cc', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc', '#597ef7'];
+                                return colorList[params.dataIndex % colorList.length];
+                            }
+                        },
+                        label: {
+                            show: true,
+                            position: 'bottom',
+                            formatter: function(params) {
+                                return icons[params.dataIndex];
+                            }
+                        },
+                        animationDuration: 1500,
+                        animationEasing: 'cubicOut',
+                        animationDelay: function(idx) {
+                            return idx * 50;
+                        }
+                    }
+                ]
+            });
+
+            // 响应窗口大小变化
+            window.addEventListener('resize', function() {
+                if (circleChartInstance) circleChartInstance.resize();
+                if (barChartInstance) barChartInstance.resize();
+            });
+        }
+
+        // ========== 选项卡功能 ==========
+        const tabNav = document.getElementById('tabNav');
+        const tabItems = document.querySelectorAll('.tab-item');
+        const TRIGGER_SCROLL = 1300; // 修改：从1200改为1600（选项卡触发点同步）
+        const ITEM_DELAY = 150;      // 降低延迟，从230改为150，更流畅
+        let isTriggered = false;     // 选项卡动画是否触发
+        let isHidden = true;         // 选项卡是否隐藏
+        let lastScrollTop = window.scrollY; // 滚动位置记录
+        let tabAnimationTimer = null; // 新增：用于清理选项卡动画定时器
+
+        // 统一滚动事件（整合所有滚动逻辑）
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.scrollY;
+            const direction = scrollTop > lastScrollTop ? 'down' : 'up';
+            lastScrollTop = scrollTop;
+
+            // 原有功能：头像+提示+回到顶部
+            if (scrollTop > FIRST_SCROLL) {
+                profileContainer.classList.add('scrolled');
+                pullTip.classList.add('hidden');
+                backToTop.classList.add('show');
+                
+                // 简介模块淡入逻辑
+                if (scrollTop >= INTRO_SHOW_SCROLL) {
+                    introWrapper.classList.add('content-show');
+                }
+                
+                // 简介模块淡出逻辑
+                if (scrollTop >= INTRO_FADE_SCROLL) {
+                    introWrapper.classList.add('content-fade');
+                    profileContainer.classList.add('fade-out');
+                    pauseAutoPlay(); // 滚动到一定位置暂停轮播
+                } else {
+                    introWrapper.classList.remove('content-fade');
+                    profileContainer.classList.remove('fade-out');
+                }
+            } else {
+                profileContainer.classList.remove('scrolled', 'fade-out');
+                introWrapper.classList.remove('content-fade');
+                pullTip.classList.remove('hidden');
+                backToTop.classList.remove('show');
+                startAutoPlay();
+                
+                // 滚动到顶部时隐藏简介模块
+                introWrapper.classList.remove('content-show');
+            }
+
+            // 游戏统计模块显示逻辑 - 修改：从1200改为1600
+            if (scrollTop >= 1400) {
+                statsPage.classList.add('show');
+                if (isFirstShow) {
+                    initCharts();
+                    isFirstShow = false;
+                }
+            } else {
+                statsPage.classList.remove('show');
+            }
+
+            // 整合功能：选项卡动画 - 优化时序和判断逻辑
+            // 只在向下滚动且超过阈值时触发，避免反复触发
+            if (direction === 'down' && scrollTop > TRIGGER_SCROLL && !isTriggered && isHidden) {
+                // 清理之前的定时器，避免重复
+                if (tabAnimationTimer) clearTimeout(tabAnimationTimer);
+                
+                // 第一步：弹出白框（立即执行，无延迟）
+                tabNav.classList.add('container-show');
+                
+                // 第二步：自动依次弹出所有选项（从第一个到最后一个）
+                tabItems.forEach((tab, index) => {
+                    tabAnimationTimer = setTimeout(() => {
+                        tab.classList.add('show');
+                    }, index * ITEM_DELAY);
+                });
+                
+                isTriggered = true;
+                isHidden = false;
+            } 
+            // 只在向上滚动且低于阈值时隐藏
+            else if (direction === 'up' && scrollTop <= TRIGGER_SCROLL - 100 && !isHidden) {
+                // 清理之前的定时器
+                if (tabAnimationTimer) clearTimeout(tabAnimationTimer);
+                
+                // 第一步：依次隐藏选项（从最后一个到第一个，更自然）
+                tabItems.forEach((tab, index) => {
+                    tabAnimationTimer = setTimeout(() => {
+                        tab.classList.remove('show');
+                        // 保留当前激活的选项样式
+                        if (!tab.classList.contains('active')) {
+                            tab.classList.remove('active');
+                        }
+                    }, (tabItems.length - 1 - index) * ITEM_DELAY);
+                });
+                
+                // 第二步：隐藏白框
+                tabAnimationTimer = setTimeout(() => {
+                    tabNav.classList.remove('container-show');
+                    isTriggered = false;
+                    isHidden = true;
+                }, tabItems.length * ITEM_DELAY + 100);
+            }
+        });
+
+        // 选项卡点击：激活+跳转
+        tabItems.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                // 保留激活样式
+                tabItems.forEach(item => item.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 键盘控制
+        window.addEventListener('keydown', function(e) {
+            if (e.keyCode === 38 || e.keyCode === 104) {
+                window.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
+                e.preventDefault();
+            } else if (e.keyCode === 40 || e.keyCode === 98) {
+                window.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
+                e.preventDefault();
+            } else if (e.keyCode === 37 || e.keyCode === 100) {
+                goToSlide(currentIndex - 1);
+                resetAutoPlay();
+                e.preventDefault();
+            } else if (e.keyCode === 39 || e.keyCode === 102) {
+                goToSlide(currentIndex + 1);
+                resetAutoPlay();
+                e.preventDefault();
+            }
+        });
+
+        // 页面加载时高亮当前选项卡
+        window.addEventListener('load', function() {
+            const currentPath = window.location.pathname;
+            const currentPage = currentPath.split('/').pop();
+            tabItems.forEach(tab => {
+                const tabHref = tab.getAttribute('href');
+                if (tabHref === currentPage) {
+                    tab.classList.add('active');
+                }
+            });
+            initCarousel(); // 初始化轮播
+            lastScrollTop = window.scrollY; // 重置滚动位置
+        });
+
+        // 页面卸载时清理定时器
+        window.addEventListener('beforeunload', function() {
+            if (tabAnimationTimer) clearTimeout(tabAnimationTimer);
+            if (autoPlayTimer) clearInterval(autoPlayTimer);
+        });
+    </script>
+</body>
+</html>
